@@ -3,6 +3,7 @@
 
 import os
 import sys
+import argparse
 
 # represents a task runner
 class BSMake:
@@ -10,6 +11,7 @@ class BSMake:
     # constructor
     def __init__(self):
         self._lastExitCode = 0
+        self.tasks = {}
     
     # represents a task
     class Task:
@@ -23,17 +25,15 @@ class BSMake:
         def run(self, args):
             self.func(args)
 
-    # static dictionary which holds all tasks
-    tasks = {}
-
     # a decorator for tasks
     def task(self, name):
         """BSMake Task Decorator"""
         # add the task to the dictionary
-        tasks[name] = self.Task(name, func)
         def decorator(func):
+            tasks[name] = self.Task(name, func)
             return func
         return decorator
+         
 
     # run a task
     def run(self, name, args):
@@ -67,18 +67,33 @@ class BSMake:
 
 # host the task runner, if the script is run directly
 if __name__ == "__main__":
-    # find if there's a file named "bsmake.py" in the current directory
-    if os.path.isfile("bsmake.py"):
-        # import the file
-        from bsmake import engine
+    # prepare the parser
+    parser = argparse.ArgumentParser(description="bmake - Boruasn Make", prog="bsmake")
+    parser.add_argument("task", help="The task to run")
+    parser.add_help = True
+    parser.add_argument("-v", "--version", action="version", version="bsmake 0.1.0")
+    parser.add_argument("-f", "--file", help="The file to load the tasks from", default="bsmake.py")
 
-        # if the first argument isn't specified, behave like Make and run the first task
-        if len(sys.argv) == 1:
-            engine.run(engine.tasks.keys()[0], sys.argv[1:])
-
-        # run the task
-        engine.run(sys.argv[1], sys.argv[2:])
-    else:
-        # complain about the missing file in the style of Make
-        print("No rule to make target '" + sys.argv[1] + "'")
-        sys.exit(1)
+   # parse the arguments
+   # if the task is not specified, print the help
+   # otherwise, run the task
+   # if the task is not found, print an error
+   # if the file is not found, print an error
+   # if the file is not a valid python file, print an error
+   # if the task throws an exception, print an error
+    try:
+        args = parser.parse_args()
+        if args.task is None:
+            parser.print_help()
+        else:
+            if os.path.isfile(args.file):
+                try:
+                    exec(open(args.file).read())
+                    if args.task in engine.tasks:
+                        engine.run(args.task, sys.argv[2:])
+                    else:
+                        print("Task '" + args.task + "' not found")
+                except Exception as e:
+                    print("Error: " + str(e))
+    except IOError:
+                print("File '" + args.file + "' not found")        

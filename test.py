@@ -5,9 +5,7 @@ import bsmake
 engine = bsmake.BSMake()
 
 # define a task
-@engine.task("hello")
-def hello(args):
-    print("Hello, world!")
+engine.task("hello")(lambda args: print("Hello, world!"))
 
 # define another task
 @engine.task("echo")
